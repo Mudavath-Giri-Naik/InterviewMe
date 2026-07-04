@@ -1,65 +1,114 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { tracks } from "@/lib/tracks";
+import { listSessions } from "@/lib/sessions";
+import type { StoredSession, TrackId } from "@/lib/types";
+
+const rooms: { id: TrackId; room: string; note?: string }[] = [
+  { id: "sde", room: "Room 01" },
+  {
+    id: "cisco_ideathon",
+    room: "Room 02",
+    note: "The full multi-round shape: fundamentals rapid-fire, idea pitch, resume grilling, CS deep-dive, managerial scenario.",
+  },
+  { id: "ai_engineer", room: "Room 03" },
+  { id: "ml_engineer", room: "Room 04" },
+  { id: "data_engineer", room: "Room 05" },
+];
 
 export default function Home() {
+  const [sessions, setSessions] = useState<StoredSession[]>([]);
+
+  // localStorage only exists client-side; read after mount to avoid hydration mismatch
+  useEffect(() => {
+    setSessions(listSessions());
+  }, []);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="flex flex-1 flex-col items-center px-6 py-16">
+      <div className="w-full max-w-2xl">
+        <p className="font-mono text-xs uppercase tracking-[0.3em] text-muted">
+          mock interview studio
+        </p>
+        <h1 className="mt-3 text-5xl font-semibold tracking-tight">
+          Interview<span className="text-accent">Me</span>
+        </h1>
+        <p className="mt-4 max-w-lg text-muted">
+          A live, spoken conversation with an interviewer who actually listens —
+          real follow-ups based on what you said, and a real report at the end.
+        </p>
+
+        <div className="mt-12 flex flex-col gap-4">
+          {rooms.map(({ id, room, note }) => {
+            const track = tracks[id];
+            return (
+              <Link
+                key={id}
+                href={`/interview/${id}`}
+                className="group block rounded-xl border border-line bg-surface p-6 transition-colors hover:border-accent/60 hover:bg-surface-raised"
+              >
+                <div className="flex items-center justify-between gap-6">
+                  <div>
+                    <p className="font-mono text-xs uppercase tracking-widest text-accent">
+                      {room} · open
+                    </p>
+                    <h2 className="mt-2 text-xl font-medium">{track.name}</h2>
+                    <p className="mt-1 text-sm text-muted">
+                      with {track.persona.name} — {track.persona.title}
+                    </p>
+                    {note && (
+                      <p className="mt-2 text-xs leading-relaxed text-muted/80">{note}</p>
+                    )}
+                  </div>
+                  <span className="shrink-0 text-2xl text-muted transition-transform group-hover:translate-x-1 group-hover:text-accent">
+                    →
+                  </span>
+                </div>
+              </Link>
+            );
+          })}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+
+        {sessions.length > 0 && (
+          <section className="mt-16">
+            <h2 className="font-mono text-xs uppercase tracking-[0.25em] text-muted">
+              past sessions
+            </h2>
+            <div className="mt-4 flex flex-col gap-2">
+              {sessions.map((s) => {
+                const track = tracks[s.track];
+                const date = new Date(s.startedAt).toLocaleString(undefined, {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                });
+                return (
+                  <Link
+                    key={s.id}
+                    href={`/results/${s.id}`}
+                    className="flex items-center justify-between rounded-lg border border-line bg-surface px-4 py-3 transition-colors hover:border-accent/50"
+                  >
+                    <div>
+                      <p className="text-sm">{track?.name ?? s.track}</p>
+                      <p className="font-mono text-xs text-muted">
+                        {date} · {s.transcript.length} turns
+                      </p>
+                    </div>
+                    <span className="font-mono text-sm">
+                      {s.report ? (
+                        <span className="text-accent">{s.report.readiness}/10</span>
+                      ) : (
+                        <span className="text-muted/60">no report</span>
+                      )}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
+      </div>
+    </main>
   );
 }

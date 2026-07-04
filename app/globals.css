@@ -1,26 +1,129 @@
 @import "tailwindcss";
 
+/* The room: a quiet interview room at night, lit by one warm desk lamp. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0f1b1a;      /* deep teal-charcoal, not pure black */
+  --surface: #152422;
+  --surface-raised: #1b2d2a;
+  --line: #24403c;
+  --foreground: #ece6d9;      /* warm off-white */
+  --muted: #8ba39c;
+  --accent: #d5a24e;          /* brass / desk-lamp amber */
+  --accent-soft: #d5a24e26;
+  --sage: #9cb89c;            /* "good" states */
+  --danger: #c96f5e;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-line: var(--line);
   --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-sage: var(--sage);
+  --color-danger: var(--danger);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  /* faint warm pool of lamplight in the upper third of the room */
+  background-image: radial-gradient(
+    ellipse 80% 50% at 50% -10%,
+    rgba(213, 162, 78, 0.08),
+    transparent 70%
+  );
+  background-attachment: fixed;
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+/* ---- avatar ---- */
+
+.avatar-breathe {
+  animation: avatar-breathe 4.4s ease-in-out infinite;
+  transform-origin: 50% 70%;
+}
+@keyframes avatar-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.014); }
+}
+
+.avatar-eye {
+  animation: avatar-blink 4.7s infinite;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+@keyframes avatar-blink {
+  0%, 94%, 100% { transform: scaleY(1); }
+  96%, 98% { transform: scaleY(0.06); }
+}
+
+.avatar-mouth {
+  transform-origin: center;
+  transform-box: fill-box;
+  transform: scaleY(0.18);
+  transition: transform 0.25s ease;
+}
+.avatar-mouth[data-state="speaking"] {
+  animation: avatar-talk 0.85s linear infinite;
+}
+@keyframes avatar-talk {
+  0%   { transform: scaleY(0.25) scaleX(0.9); }
+  15%  { transform: scaleY(0.95) scaleX(1); }
+  30%  { transform: scaleY(0.4)  scaleX(1.05); }
+  45%  { transform: scaleY(0.8)  scaleX(0.92); }
+  60%  { transform: scaleY(0.2)  scaleX(1); }
+  75%  { transform: scaleY(0.65) scaleX(0.95); }
+  90%  { transform: scaleY(0.35) scaleX(1.02); }
+  100% { transform: scaleY(0.25) scaleX(0.9); }
+}
+
+.avatar-brows[data-state="thinking"] {
+  transform: translateY(-3px);
+}
+.avatar-brows {
+  transition: transform 0.4s ease;
+}
+
+.pulse-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1.5px solid var(--sage);
+  animation: pulse-ring 2.2s cubic-bezier(0.2, 0.6, 0.4, 1) infinite;
+  pointer-events: none;
+}
+.pulse-ring:nth-child(2) { animation-delay: 0.7s; }
+.pulse-ring:nth-child(3) { animation-delay: 1.4s; }
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(1.12); opacity: 0; }
+}
+
+.speaking-glow {
+  animation: speaking-glow 1.6s ease-in-out infinite;
+}
+@keyframes speaking-glow {
+  0%, 100% { box-shadow: 0 0 32px 0 rgba(213, 162, 78, 0.12); }
+  50% { box-shadow: 0 0 52px 6px rgba(213, 162, 78, 0.28); }
+}
+
+.thinking-dot {
+  animation: thinking-pulse 1.2s ease-in-out infinite;
+}
+.thinking-dot:nth-child(2) { animation-delay: 0.2s; }
+.thinking-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes thinking-pulse {
+  0%, 100% { opacity: 0.25; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-2px); }
 }
