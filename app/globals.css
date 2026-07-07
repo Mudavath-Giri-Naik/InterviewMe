@@ -50,49 +50,46 @@ html {
   scroll-behavior: smooth;
 }
 
-/* ---- landing page ---- */
+/* ---- landing page (light, playful) ---- */
 
-.text-gradient {
-  background: linear-gradient(100deg, #f0d9a8 0%, var(--accent) 45%, #b97f2e 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+.font-serif-accent {
+  font-family: var(--font-instrument), Georgia, serif;
 }
 
-/* faint blueprint grid behind the hero, fading out downward */
-.hero-grid {
-  background-image:
-    linear-gradient(to right, rgba(213, 162, 78, 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(213, 162, 78, 0.05) 1px, transparent 1px);
-  background-size: 44px 44px;
-  mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 40%, transparent 100%);
+/* dotted notebook grid on warm paper */
+.paper-grid {
+  background-image: radial-gradient(rgba(23, 20, 15, 0.07) 1.2px, transparent 1.2px);
+  background-size: 26px 26px;
+  mask-image: radial-gradient(ellipse 100% 80% at 50% 0%, black 30%, transparent 100%);
 }
 
-.glow-panel {
-  box-shadow:
-    0 0 0 1px rgba(213, 162, 78, 0.14),
-    0 24px 80px -24px rgba(213, 162, 78, 0.25),
-    0 8px 40px -8px rgba(0, 0, 0, 0.6);
+/* scrolling ticker — content duplicated twice, slides half its width */
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 26s linear infinite;
+}
+@keyframes marquee {
+  to { transform: translateX(-50%); }
 }
 
-/* animated equalizer bars in the product mockup */
+.sticker-spin {
+  animation: sticker-spin 14s linear infinite;
+}
+@keyframes sticker-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* animated equalizer bars */
 .eq-bar {
   width: 3px;
   border-radius: 2px;
-  background: var(--accent);
+  background: currentColor;
   animation: eq-bounce 1.1s ease-in-out infinite;
 }
 @keyframes eq-bounce {
   0%, 100% { height: 25%; opacity: 0.7; }
   50% { height: 100%; opacity: 1; }
-}
-
-.fade-up {
-  animation: fade-up 0.8s ease-out both;
-}
-@keyframes fade-up {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 details.faq-item summary::-webkit-details-marker {
