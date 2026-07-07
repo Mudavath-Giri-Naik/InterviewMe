@@ -8,6 +8,8 @@ export interface ChatTurn {
 export interface Persona {
   name: string;
   title: string;
+  /** ElevenLabs premade voice used when ELEVENLABS_API_KEY is configured. */
+  voiceId: string;
 }
 
 export interface Track {

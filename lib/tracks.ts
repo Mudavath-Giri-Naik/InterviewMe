@@ -3,31 +3,51 @@ import type { Track, TrackId } from "./types";
 export const tracks: Record<TrackId, Track> = {
   sde: {
     name: "Software Development Engineer",
-    persona: { name: "Priya", title: "Senior SDE, 6 years experience" },
+    persona: {
+      name: "Priya",
+      title: "Senior SDE, 6 years experience",
+      voiceId: "XrExE9yKIg1WjnnlVkGX", // Matilda — warm, professional
+    },
     arc: "Warm open → one DSA problem talked through out loud (not typed) → light system-design-for-entry-level question → deep dive on one resume project → behavioral close.",
     turnBudget: 10,
   },
   ai_engineer: {
     name: "AI Engineer",
-    persona: { name: "Rohan", title: "AI Engineer, builds production LLM systems" },
+    persona: {
+      name: "Rohan",
+      title: "AI Engineer, builds production LLM systems",
+      voiceId: "cjVigY5qzO86Huf0OWal", // Eric — friendly, conversational
+    },
     arc: "Warm open → LLM/agent architecture reasoning → prompt & context design trade-offs → evaluation/guardrails thinking → deep dive on one applied project → behavioral close.",
     turnBudget: 10,
   },
   ml_engineer: {
     name: "Machine Learning Engineer",
-    persona: { name: "Ananya", title: "ML Engineer, model deployment focus" },
+    persona: {
+      name: "Ananya",
+      title: "ML Engineer, model deployment focus",
+      voiceId: "EXAVITQu4vr4xnSDxMaL", // Sarah — clear, measured
+    },
     arc: "Warm open → classical ML fundamentals (bias-variance, regularization, metric choice) → a live 'how would you model X' case question → deployment/monitoring awareness → project deep dive → behavioral close.",
     turnBudget: 10,
   },
   data_engineer: {
     name: "Data Engineer",
-    persona: { name: "Karthik", title: "Data Engineer, pipelines at scale" },
+    persona: {
+      name: "Karthik",
+      title: "Data Engineer, pipelines at scale",
+      voiceId: "onwK4e9ZLuTAKqWW03F9", // Daniel — steady, authoritative
+    },
     arc: "Warm open → ETL/pipeline design reasoning → SQL depth → data modeling trade-offs → a scaling/reliability scenario → project deep dive → behavioral close.",
     turnBudget: 10,
   },
   cisco_ideathon: {
     name: "Cisco Ideathon",
-    persona: { name: "Vikram", title: "Senior Engineer, Cisco (15+ years)" },
+    persona: {
+      name: "Vikram",
+      title: "Senior Engineer, Cisco (15+ years)",
+      voiceId: "nPczCjzI2devNBz1zQrb", // Brian — deep, senior-engineer gravitas
+    },
     arc: `
       Modeled on the real multi-round shape of Cisco's Ideathon process:
       1. Warm open + a rapid-fire check across CS fundamentals (networking, OS, DBMS, C) — conversational, not MCQ.

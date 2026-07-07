@@ -46,6 +46,59 @@ body {
   background: var(--accent-soft);
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
+/* ---- landing page ---- */
+
+.text-gradient {
+  background: linear-gradient(100deg, #f0d9a8 0%, var(--accent) 45%, #b97f2e 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* faint blueprint grid behind the hero, fading out downward */
+.hero-grid {
+  background-image:
+    linear-gradient(to right, rgba(213, 162, 78, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(213, 162, 78, 0.05) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 40%, transparent 100%);
+}
+
+.glow-panel {
+  box-shadow:
+    0 0 0 1px rgba(213, 162, 78, 0.14),
+    0 24px 80px -24px rgba(213, 162, 78, 0.25),
+    0 8px 40px -8px rgba(0, 0, 0, 0.6);
+}
+
+/* animated equalizer bars in the product mockup */
+.eq-bar {
+  width: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+  animation: eq-bounce 1.1s ease-in-out infinite;
+}
+@keyframes eq-bounce {
+  0%, 100% { height: 25%; opacity: 0.7; }
+  50% { height: 100%; opacity: 1; }
+}
+
+.fade-up {
+  animation: fade-up 0.8s ease-out both;
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+details.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
 /* ---- avatar ---- */
 
 .avatar-breathe {

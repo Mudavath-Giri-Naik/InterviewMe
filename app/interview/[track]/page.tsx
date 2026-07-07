@@ -43,7 +43,8 @@ export default function InterviewPage({
 function InterviewRoom({ trackId }: { trackId: TrackId }) {
   const track = tracks[trackId];
   const router = useRouter();
-  const { support, speak, stopSpeaking, startListening, stopListening } = useVoiceEngine();
+  const { support, speak, stopSpeaking, startListening, stopListening, primeAudio } =
+    useVoiceEngine();
 
   const [stage, setStage] = useState<"setup" | "live" | "ending">("setup");
   const [resumeText, setResumeText] = useState("");
@@ -238,9 +239,13 @@ function InterviewRoom({ trackId }: { trackId: TrackId }) {
   function deliverLine(line: string) {
     if (voiceOnRef.current && supportRef.current.tts) {
       setStatus("speaking");
-      speak(line, () => {
-        if (statusRef.current === "speaking") beginListeningRef.current();
-      });
+      speak(
+        line,
+        () => {
+          if (statusRef.current === "speaking") beginListeningRef.current();
+        },
+        { track: trackId }
+      );
     } else {
       setStatus("awaiting-answer");
     }
@@ -272,6 +277,9 @@ function InterviewRoom({ trackId }: { trackId: TrackId }) {
   }
 
   function beginInterview() {
+    // Inside the click gesture: unlock the shared audio element so the
+    // ElevenLabs playback for every later question is autoplay-blessed.
+    primeAudio();
     sessionIdRef.current = crypto.randomUUID();
     startedAtRef.current = new Date().toISOString();
     try {

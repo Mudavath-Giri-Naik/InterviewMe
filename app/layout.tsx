@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "InterviewMe",
-  description: "A live, spoken mock interview with an AI interviewer that actually listens.",
+  title: "InterviewMe — The mock interview that actually talks back",
+  description:
+    "A live, spoken mock interview with an AI interviewer that listens, asks real follow-ups, grills your resume, and hands you an honest report.",
 };
 
 export default function RootLayout({

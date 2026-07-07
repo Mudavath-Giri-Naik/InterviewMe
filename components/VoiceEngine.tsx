@@ -41,6 +41,11 @@ export interface ListenCallbacks {
   onError: (error: string) => void;
 }
 
+export interface SpeakOptions {
+  /** Track id — picks the persona's ElevenLabs voice server-side. */
+  track?: string;
+}
+
 function getRecognitionCtor(): (new () => SpeechRecognitionLike) | null {
   if (typeof window === "undefined") return null;
   const w = window as unknown as Record<string, unknown>;
@@ -50,11 +55,16 @@ function getRecognitionCtor(): (new () => SpeechRecognitionLike) | null {
 }
 
 /**
- * Wraps browser SpeechRecognition (STT) + SpeechSynthesis (TTS).
+ * Voice I/O for the interview room.
  *
- * Chrome's recognizer stops itself after a stretch of silence, which would
- * lose everything said before the stop — so on `onend` we bank the finalized
- * text and restart, keeping one continuous transcript until stopListening().
+ * TTS: ElevenLabs via /api/tts when configured (played through a shared
+ * <audio> element — far more reliable than speechSynthesis), falling back
+ * to browser speechSynthesis when the key is missing or a request fails.
+ *
+ * STT: browser SpeechRecognition. Chrome's recognizer stops itself after a
+ * stretch of silence, which would lose everything said before the stop — so
+ * on `onend` we bank the finalized text and restart, keeping one continuous
+ * transcript until stopListening().
  */
 export function useVoiceEngine() {
   const [support, setSupport] = useState<VoiceSupport>({ stt: false, tts: false });
@@ -68,6 +78,14 @@ export function useVoiceEngine() {
   const utterRef = useRef<SpeechSynthesisUtterance | null>(null);
   const speakTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const voiceRef = useRef<SpeechSynthesisVoice | null>(null);
+
+  // Each speak()/stopSpeaking() bumps the sequence; async continuations
+  // from a superseded speak check it and bail instead of talking over.
+  const speakSeqRef = useRef(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioUrlRef = useRef<string | null>(null);
+  // null = not probed yet, false = server said "no key", true = works
+  const remoteTtsRef = useRef<boolean | null>(null);
 
   useEffect(() => {
     setSupport({
@@ -95,7 +113,107 @@ export function useVoiceEngine() {
     return () => window.speechSynthesis.removeEventListener("voiceschanged", pickVoice);
   }, []);
 
-  const speak = useCallback((text: string, onEnd: () => void) => {
+  /**
+   * Call from inside a click handler before the first speak. Creating the
+   * shared <audio> element and attempting play() during a real user gesture
+   * blesses it against Chrome's autoplay policy, so every later
+   * programmatic play() (follow-up questions) is allowed.
+   */
+  const primeAudio = useCallback(() => {
+    if (typeof Audio === "undefined") return;
+    if (!audioRef.current) audioRef.current = new Audio();
+    audioRef.current.play().catch(() => {
+      /* no src yet — the attempt itself is what registers the gesture */
+    });
+  }, []);
+
+  const stopAudioElement = useCallback(() => {
+    const a = audioRef.current;
+    if (a) {
+      a.onended = null;
+      a.onerror = null;
+      try {
+        a.pause();
+      } catch {
+        /* not playing */
+      }
+      a.removeAttribute("src");
+      try {
+        a.load();
+      } catch {
+        /* detached */
+      }
+    }
+    if (audioUrlRef.current) {
+      URL.revokeObjectURL(audioUrlRef.current);
+      audioUrlRef.current = null;
+    }
+  }, []);
+
+  /** ElevenLabs path. Resolves "played" when audio finished, "fallback" to try browser TTS. */
+  const playRemote = useCallback(
+    async (text: string, track: string | undefined, seq: number): Promise<"played" | "fallback"> => {
+      if (remoteTtsRef.current === false) return "fallback";
+      try {
+        const res = await fetch("/api/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, track }),
+        });
+        if (res.status === 503) {
+          // No API key configured — don't pay a failing round-trip per turn.
+          remoteTtsRef.current = false;
+          return "fallback";
+        }
+        if (!res.ok) return "fallback";
+        const blob = await res.blob();
+        if (speakSeqRef.current !== seq) return "played"; // superseded — swallow
+        remoteTtsRef.current = true;
+
+        if (!audioRef.current) audioRef.current = new Audio();
+        const a = audioRef.current;
+        const url = URL.createObjectURL(blob);
+        audioUrlRef.current = url;
+
+        return await new Promise<"played" | "fallback">((resolve) => {
+          let started = false;
+          const cleanup = () => {
+            a.onended = null;
+            a.onerror = null;
+            if (audioUrlRef.current === url) {
+              URL.revokeObjectURL(url);
+              audioUrlRef.current = null;
+            }
+          };
+          a.onended = () => {
+            cleanup();
+            resolve("played");
+          };
+          a.onerror = () => {
+            cleanup();
+            // Mid-playback failure: the line was partially heard — ending the
+            // turn beats replaying the whole thing in a different voice.
+            resolve(started ? "played" : "fallback");
+          };
+          a.src = url;
+          a.play()
+            .then(() => {
+              started = true;
+            })
+            .catch(() => {
+              cleanup();
+              resolve("fallback");
+            });
+        });
+      } catch {
+        return "fallback";
+      }
+    },
+    []
+  );
+
+  /** Browser speechSynthesis path (fallback). */
+  const speakWithSynthesis = useCallback((text: string, onEnd: () => void) => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) {
       onEnd();
       return;
@@ -104,7 +222,11 @@ export function useVoiceEngine() {
 
     const attempt = (useCustomVoice: boolean, retriesLeft: number) => {
       if (speakTimerRef.current) clearTimeout(speakTimerRef.current);
-      synth.cancel();
+      // cancel() on an IDLE engine puts Chrome in a state where the next
+      // speak() is silently dropped — that's why follow-up questions went
+      // mute while the first one worked. Only clear when something is
+      // actually queued or speaking.
+      if (synth.speaking || synth.pending) synth.cancel();
 
       const utter = new SpeechSynthesisUtterance(text);
       utter.rate = 0.97;
@@ -158,16 +280,40 @@ export function useVoiceEngine() {
     attempt(true, 1);
   }, []);
 
+  const speak = useCallback(
+    (text: string, onEnd: () => void, opts?: SpeakOptions) => {
+      const seq = ++speakSeqRef.current;
+      stopAudioElement();
+      const guardedEnd = () => {
+        if (speakSeqRef.current === seq) onEnd();
+      };
+
+      void (async () => {
+        const result = await playRemote(text, opts?.track, seq);
+        if (speakSeqRef.current !== seq) return;
+        if (result === "played") {
+          guardedEnd();
+        } else {
+          speakWithSynthesis(text, guardedEnd);
+        }
+      })();
+    },
+    [playRemote, speakWithSynthesis, stopAudioElement]
+  );
+
   const stopSpeaking = useCallback(() => {
+    speakSeqRef.current++;
     if (speakTimerRef.current) {
       clearTimeout(speakTimerRef.current);
       speakTimerRef.current = null;
     }
     utterRef.current = null;
+    stopAudioElement();
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
+      const synth = window.speechSynthesis;
+      if (synth.speaking || synth.pending) synth.cancel();
     }
-  }, []);
+  }, [stopAudioElement]);
 
   const startInstance = useCallback(() => {
     const Ctor = getRecognitionCtor();
@@ -255,5 +401,5 @@ export function useVoiceEngine() {
     };
   }, [stopListening, stopSpeaking]);
 
-  return { support, speak, stopSpeaking, startListening, stopListening };
+  return { support, speak, stopSpeaking, startListening, stopListening, primeAudio };
 }
